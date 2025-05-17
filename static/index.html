@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Two-Layer Soil Resistivity Model Fitting</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding: 6px;
+    }
+    input {
+      width: 80px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Enter Measured Resistance Values (in Ω)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Electrode Spacing (m)</th>
+        <th>Measured Resistance (Ω)</th>
+      </tr>
+    </thead>
+    <tbody id="input-table"></tbody>
+  </table>
+
+  <button onclick="startFitting()">Calculate Soil Resistivity and Fit</button>
+
+  <h2>Fitting Result Chart</h2>
+  <canvas id="chart" width="800" height="400"></canvas>
+  <pre id="result"></pre>
+
+  <script>
+    const spacings = [0.2, 0.4, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0];
+    let measuredValues = [];
+    let chart;
+
+    // Initialize input table
+    const table = document.getElementById("input-table");
+    spacings.forEach(s => {
+      const row = table.insertRow();
+      row.insertCell().textContent = s;
+      const inputCell = row.insertCell();
+      const input = document.createElement("input");
+      input.type = "number";
+      input.step = "any";
+      input.placeholder = "Enter resistance";
+      inputCell.appendChild(input);
+    });
+
+    function getValue() {
+      measuredValues = [];
+      for (let row = 0; row < spacings.length; row++) {
+        const input = table.rows[row].cells[1].querySelector("input");
+        const value = parseFloat(input.value);
+        if (!isNaN(value)) {
+          measuredValues.push(value);
+        } else {
+          measuredValues.push(null);
+        }
+      }
+    }
+
+    async function startFitting() {
+      getValue();
+
+      const valid = measuredValues.every(v => v !== null);
+      if (!valid) {
+        alert("Please enter all resistance values!");
+        return;
+      }
+
+      const requestBody = {
+        spacings: spacings,
+        resistances: measuredValues
+      };
+
+      try {
+        const response = await fetch("/fit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          throw new Error("Request failed with status: " + response.status);
+        }
+
+        const result = await response.json();
+        console.log(result);
+        const { rho1, rho2, h } = result.params;
+        const loss = result.loss;
+        const rho_fit_array = result.curve;
+
+        drawChartFromServer(rho_fit_array, rho1, rho2, h, loss);
+      } catch (error) {
+        alert("Failed to connect to backend: " + error.message);
+      }
+    }
+
+    function drawChartFromServer(rho_fit_array, rho1, rho2, h, loss) {
+      const data = {
+        labels: rho_fit_array.map(d => d.a),
+        datasets: [
+          {
+            label: 'Fitted Curve',
+            data: rho_fit_array.map(d => d.rho),
+            borderColor: 'blue',
+            fill: false
+          },
+          {
+            label: 'Measured Data',
+            data: spacings.map((a, i) => ({
+              x: a,
+              y: measuredValues[i] * a * 2 * Math.PI
+            })),
+            backgroundColor: 'red',
+            type: 'scatter',
+            showLine: false
+          }
+        ]
+      };
+
+      const options = {
+        animation: false,
+        scales: {
+          x: {
+            type: 'logarithmic',
+            title: { display: true, text: 'Deepth (m)' }
+          },
+          y: {
+            type: 'logarithmic',
+            title: { display: true, text: 'Apparent Resistivity ρₐ (Ω·m)' }
+          }
+        }
+      };
+
+      if (chart) {
+        chart.data = data;
+        chart.options = options;
+        chart.update();
+      } else {
+        chart = new Chart(document.getElementById("chart"), {
+          type: 'line',
+          data,
+          options
+        });
+      }
+
+      document.getElementById("result").textContent =
+        `Fitting Parameters (from backend):
+ρ₁ = ${rho1.toFixed(4)} Ω·m
+ρ₂ = ${rho2.toFixed(4)} Ω·m
+h  = ${h.toFixed(4)} m
+Sum of Squared Errors = ${loss.toFixed(6)}`;
+    }
+  </script>
+</body>
+</html>
