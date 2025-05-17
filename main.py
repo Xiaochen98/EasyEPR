@@ -1,32 +1,37 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import numpy as np
 from scipy.optimize import minimize
 
 app = FastAPI()
 
-# 跨域（给其他测试者用）
+# CORS 设置
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 可以限制为你的域名
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 提供静态前端页面（根路径访问 index.html）
+# 前端页面（index.html）
 @app.get("/")
 def serve_index():
     return FileResponse("static/index.html")
 
+# 请求数据模型
+class FitRequest(BaseModel):
+    spacings: list[float]
+    resistances: list[float]
 
-# POST 接口用于模型拟合
+# 模型拟合接口
 @app.post("/fit")
-def fit_soil_model(data: dict):
-    spacings = np.array(data["spacings"])
-    resistances = np.array(data["resistances"])
-    rho_measured = resistances * spacings * 2 * np.pi
+def fit_soil_model(data: FitRequest):
+    a_vals = np.array(data.spacings)
+    resistances = np.array(data.resistances)
+    rho_measured = resistances * a_vals * 2 * np.pi
 
     def solveRHO(s, p1, p2, h):
         if p1 == 0 or p2 == 0 or h == 0:
@@ -35,17 +40,25 @@ def fit_soil_model(data: dict):
         epsilon = 1e-6
         K = (p2 - p1) / (p2 + p1)
 
-        s1 = s2 = 0
-        for i in range(1, 10000):
-            t1 = K**i / np.sqrt(s**2 + (2 * i * h)**2)
-            s1 += t1
-            if t1 < epsilon:
-                break
-        for i in range(1, 10000):
-            t2 = K**i / np.sqrt(4 * s**2 + (2 * i * h)**2)
-            s2 += t2
-            if t2 < epsilon:
-                break
+        s1 = 0
+        delta = 1
+        i = 1
+        while delta > epsilon and i <= 10000:
+            prev = s1
+            term = K**i / np.sqrt(s**2 + (2 * i * h)**2)
+            s1 += term
+            delta = abs(s1 - prev)
+            i += 1
+
+        s2 = 0
+        delta = 1
+        i = 1
+        while delta > epsilon and i <= 10000:
+            prev = s2
+            term = K**i / np.sqrt(4 * s**2 + (2 * i * h)**2)
+            s2 += term
+            delta = abs(s2 - prev)
+            i += 1
 
         Rw = p1 / (2 * pi * s) + (2 * p1 / pi) * s1 - (2 * p1 / pi) * s2
         return 2 * pi * s * Rw
@@ -55,7 +68,7 @@ def fit_soil_model(data: dict):
 
     def loss(params):
         rho1, rho2, h = params
-        pred = model_vectorized(spacings, rho1, rho2, h)
+        pred = model_vectorized(a_vals, rho1, rho2, h)
         return np.sum(((pred - rho_measured) / rho_measured) ** 2)
 
     x0 = [100, 50, 1]
