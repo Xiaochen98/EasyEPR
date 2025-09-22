@@ -1,14 +1,37 @@
 # EasyEPR
 
-## General Introduction
-Welcome to the EasyEPR repository! This project represents a comprehensive solution for Electronic Patient Records (EPR) management, aiming to simplify the process of patient data handling in healthcare settings. The repository contains well-structured code and documentation to ensure ease of use and collaboration among developers and healthcare professionals.
+## Project Overview
+EasyEPR is a test project designed for the calculation of soil resistivity. This repository provides a foundation for exploring and optimizing algorithms and workflows related to soil electrical resistivity measurements. The codebase is structured for easy collaboration, learning, and future extension.
 
-## Project Purpose
-The primary purpose of EasyEPR is to provide a user-friendly interface for managing electronic patient records efficiently. The application is designed to facilitate the seamless storage, retrieval, and management of patient information, ensuring compliance with healthcare regulations and enhancing the overall patient care experience.
+## Features
+- **User-Friendly Interface**: Simple and intuitive design for quick access and testing
+- **Adaptable Architecture**: Modular codebase allows for easy extension and experimentation
+- **Data Processing**: Supports basic data input and output operations relevant to soil resistivity calculations
+- **Documentation**: Includes clear documentation to help new users and contributors get started
 
-## Professional Highlights
-- **User-Centric Design**: The interface is designed with the end-user in mind, ensuring that healthcare professionals can navigate easily and access vital information swiftly.
-- **Secure Data Management**: Implements robust security measures to protect sensitive patient data, adhering to industry standards and regulations.
-- **Scalability**: The architecture allows for easy scalability to accommodate growing datasets and increased user demands.
-- **Integration Capabilities**: EasyEPR can integrate with existing healthcare systems, enabling a smooth transition and interoperability.
-- **Comprehensive Documentation**: The repository includes thorough documentation to assist developers in understanding the codebase and contributing effectively.
+## Technology Stack
+- **Frontend**: HTML
+- **Backend**: Python
+
+## How to Use
+> This project is intended for testing and demonstration purposes only. It is not a production-ready tool.
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Xiaochen98/EasyEPR.git
+   ```
+2. Navigate to the project directory:
+   ```bash
+   cd EasyEPR
+   ```
+3. Review the code and documentation to understand usage and test the soil resistivity calculation scripts.
+
+## Application Scenarios
+EasyEPR is suitable for technical testing, algorithm development, and educational exploration in the area of soil resistivity measurement.
+
+## Contact
+If you are interested in learning more or joining our team, please reach out to the project owner via GitHub.
+
+---
+
+> **Note:** This repository is for test and demonstration purposes only. We welcome developers interested in environmental data processing to connect with us!
